@@ -63,21 +63,12 @@ export function startServer(config: ServerConfig): http.Server {
     await mcpServer.connect(sseTransport);
   });
 
-  // ---- Optional: Endpoint to receive messages from the client (bi-directional) ----
-  app.post("/messages", express.json(), async (req: Request, res: Response) => {
-    if (sseTransport) {
-      await sseTransport.handlePostMessage(req, res);
-    } else {
-      res.status(503).send("SSE transport not initialized.");
-    }
-  });
-
   // ---- ENDPOINTS ----
 
   const server = app.listen(port, () => {
     console.log(`Financial Modeling Prep MCP server started on port ${port}`);
     console.log(`Health endpoint available at http://localhost:${port}/healthcheck`);
-    console.log(`MCP SSE endpoint available at http://localhost:${port}/mcp/sse`);
+    console.log(`MCP SSE endpoint available at http://localhost:${port}/sse`);
   });
 
   return server;
