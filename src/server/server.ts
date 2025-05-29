@@ -67,13 +67,20 @@ export function startServer(config: ServerConfig): http.Server {
   const sessions: Record<string, SSEServerTransport> = {};
 
   app.get("/sse", async (req, res) => {
-    const sessionId = uuidv4();
     const sseTransport = new SSEServerTransport("/messages", res);
-    sessions[sessionId] = sseTransport;
+    const sessionId = sseTransport.sessionId;
+    sessions[sseTransport.sessionId] = sseTransport;
     console.error('sessions', sessions)
     // Send sessionId to client as initial message
     // res.write(`event: sessionId\ndata: ${sessionId}\n\n`);
     await mcpServer.connect(sseTransport);
+
+    // Cleanup when client disconnects
+    req.on("close", () => {
+      delete sessions[sessionId];
+      res.end();
+      sseTransport.close()
+    });
   });
 
   app.post("/messages", async (req, res) => {
@@ -83,10 +90,8 @@ export function startServer(config: ServerConfig): http.Server {
     const sessionId = req.query.sessionId as string;
     const transport = sessions[sessionId];
     if (transport) {
-      console.log('session exist', sessions)
       await transport.handlePostMessage(req, res);
     } else {
-      console.log('session does not exist', sessions)
       res.status(404).send("Invalid sessionId");
     }
   });
