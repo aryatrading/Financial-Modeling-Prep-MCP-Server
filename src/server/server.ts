@@ -5,6 +5,7 @@ import { getServerVersion } from "../utils/getServerVersion.js";
 import { DEFAULT_API_KEY } from "../constants/index.js";
 import express, { Request, Response } from "express";
 import http from "node:http";
+import cors from "cors";
 
 const VERSION = getServerVersion();
 
@@ -45,7 +46,13 @@ export function startServer(config: ServerConfig): http.Server {
   const { port } = config;
   const app = express();
   const mcpServer = createMcpServer({ config: { FMP_ACCESS_TOKEN: config.accessToken } });
-
+  app.use(
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "OPTIONS"],
+      credentials: false,
+    })
+  );
   app.get("/healthcheck", (req: Request, res: Response) => {
     res.status(200).json({
       status: "ok",
@@ -56,11 +63,18 @@ export function startServer(config: ServerConfig): http.Server {
   });
 
   // ---- SSE MCP ENDPOINT ----
-  let sseTransport: any = null; // Will hold the transport instance for POSTs
+  let transport: SSEServerTransport;
 
-  app.get("/sse", async (req: Request, res: Response) => {
-    sseTransport = new SSEServerTransport("/messages", res);
-    await mcpServer.connect(sseTransport);
+  app.get("/sse", async (req, res) => {
+    transport = new SSEServerTransport("/messages", res);
+    await mcpServer.connect(transport);
+  });
+
+  app.post("/messages", async (req, res) => {
+    // Note: to support multiple simultaneous connections, these messages will
+    // need to be routed to a specific matching transport. (This logic isn't
+    // implemented here, for simplicity.)
+    await transport.handlePostMessage(req, res);
   });
 
   // ---- ENDPOINTS ----
