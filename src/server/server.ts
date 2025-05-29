@@ -72,7 +72,7 @@ export function startServer(config: ServerConfig): http.Server {
     sessions[sessionId] = sseTransport;
 
     // Send sessionId to client as initial message
-    res.write(`event: sessionId\ndata: ${sessionId}\n\n`);
+    // res.write(`event: sessionId\ndata: ${sessionId}\n\n`);
     await mcpServer.connect(sseTransport);
 
     // Cleanup when client disconnects
