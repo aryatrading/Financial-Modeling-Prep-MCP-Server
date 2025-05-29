@@ -70,13 +70,14 @@ export function startServer(config: ServerConfig): http.Server {
     const sseTransport = new SSEServerTransport("/messages", res);
     const sessionId = sseTransport.sessionId;
     sessions[sseTransport.sessionId] = sseTransport;
-    console.error('sessions', sessions)
+    console.error('new session created', sessionId);
     // Send sessionId to client as initial message
     // res.write(`event: sessionId\ndata: ${sessionId}\n\n`);
     await mcpServer.connect(sseTransport);
 
     // Cleanup when client disconnects
     req.on("close", () => {
+      console.error('Session closed', sessionId);
       delete sessions[sessionId];
       res.end();
       sseTransport.close()
@@ -92,6 +93,7 @@ export function startServer(config: ServerConfig): http.Server {
     if (transport) {
       await transport.handlePostMessage(req, res);
     } else {
+      console.error('Invalid session', sessionId);
       res.status(404).send("Invalid sessionId");
     }
   });
