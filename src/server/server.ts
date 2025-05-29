@@ -6,6 +6,7 @@ import { DEFAULT_API_KEY } from "../constants/index.js";
 import express, { Request, Response } from "express";
 import http from "node:http";
 import cors from "cors";
+import { v4 as uuidv4 } from "uuid";
 
 const VERSION = getServerVersion();
 
@@ -63,18 +64,35 @@ export function startServer(config: ServerConfig): http.Server {
   });
 
   // ---- SSE MCP ENDPOINT ----
-  let transport: SSEServerTransport;
+  const sessions: Record<string, SSEServerTransport> = {};
 
   app.get("/sse", async (req, res) => {
-    transport = new SSEServerTransport("/messages", res);
-    await mcpServer.connect(transport);
+    const sessionId = uuidv4();
+    const sseTransport = new SSEServerTransport("/messages", res);
+    sessions[sessionId] = sseTransport;
+
+    // Send sessionId to client as initial message
+    res.write(`event: sessionId\ndata: ${sessionId}\n\n`);
+    await mcpServer.connect(sseTransport);
+
+    // Cleanup when client disconnects
+    req.on("close", () => {
+      delete sessions[sessionId];
+      res.end();
+    });
   });
 
   app.post("/messages", async (req, res) => {
     // Note: to support multiple simultaneous connections, these messages will
     // need to be routed to a specific matching transport. (This logic isn't
     // implemented here, for simplicity.)
-    await transport.handlePostMessage(req, res);
+    const sessionId = req.query.sessionId as string;
+    const transport = sessions[sessionId];
+    if (transport) {
+      await transport.handlePostMessage(req, res);
+    } else {
+      res.status(404).send("Invalid sessionId");
+    }
   });
 
   // ---- ENDPOINTS ----
