@@ -46,7 +46,6 @@ function createMcpServer({
 export function startServer(config: ServerConfig): http.Server {
   const { port } = config;
   const app = express();
-  const mcpServer = createMcpServer({ config: { FMP_ACCESS_TOKEN: config.accessToken } });
   app.use(
     cors({
       origin: "*",
@@ -73,14 +72,15 @@ export function startServer(config: ServerConfig): http.Server {
     console.error('new session created', sessionId);
     // Send sessionId to client as initial message
     // res.write(`event: sessionId\ndata: ${sessionId}\n\n`);
-    await mcpServer.connect(sseTransport);
-
+    const mcpServer = createMcpServer({ config: { FMP_ACCESS_TOKEN: config.accessToken } });
+    mcpServer.connect(sseTransport);
     // Cleanup when client disconnects
     req.on("close", () => {
       console.error('Session closed', sessionId);
       delete sessions[sessionId];
+      sseTransport.close();
+      mcpServer.close();
       res.end();
-      sseTransport.close()
     });
   });
 
