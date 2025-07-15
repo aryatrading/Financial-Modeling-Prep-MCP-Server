@@ -22,7 +22,7 @@ export class SearchClient extends FMPClient {
   }
 
   /**
-   * Search for stock symbols by query
+   * Search for symbols by query
    * @param query The search query
    * @param limit Optional limit on number of results (default: 50)
    * @param exchange Optional exchange filter

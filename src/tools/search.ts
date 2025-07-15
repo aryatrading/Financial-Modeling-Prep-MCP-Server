@@ -16,7 +16,7 @@ export function registerSearchTools(
   server.tool(
     "searchSymbol",
     {
-      query: z.string().describe("The search query to find stock symbols"),
+      query: z.string().describe("The search query to find symbols"),
       limit: z
         .number()
         .optional()

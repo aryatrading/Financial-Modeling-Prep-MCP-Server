@@ -16,7 +16,7 @@ export function registerQuotesTools(
   server.tool(
     "getQuote",
     {
-      symbol: z.string().describe("Stock symbol"),
+      symbol: z.string().describe("symbol"),
     },
     async ({ symbol }) => {
       try {
@@ -43,7 +43,7 @@ export function registerQuotesTools(
   server.tool(
     "getQuoteShort",
     {
-      symbol: z.string().describe("Stock symbol"),
+      symbol: z.string().describe("symbol"),
     },
     async ({ symbol }) => {
       try {
@@ -151,7 +151,7 @@ export function registerQuotesTools(
   server.tool(
     "getBatchQuotes",
     {
-      symbols: z.string().describe("Comma-separated list of stock symbols"),
+      symbols: z.string().describe("Comma-separated list of symbols"),
     },
     async ({ symbols }) => {
       try {
@@ -178,7 +178,7 @@ export function registerQuotesTools(
   server.tool(
     "getBatchQuotesShort",
     {
-      symbols: z.string().describe("Comma-separated list of stock symbols"),
+      symbols: z.string().describe("Comma-separated list of symbols"),
     },
     async ({ symbols }) => {
       try {
